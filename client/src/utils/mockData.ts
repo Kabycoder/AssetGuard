@@ -1,0 +1,225 @@
+import {
+  KpiCardData,
+  LifecycleStage,
+  StatusDistributionItem,
+  AssetTypeBreakdown,
+  ActivityItem,
+  QuickAction,
+} from '../types';
+
+export const mockKpis: KpiCardData[] = [
+  {
+    id: 'total-assets',
+    title: 'Total Assets',
+    value: 1248,
+    formattedValue: '1,248',
+    change: '+12% this month',
+    changeType: 'increase',
+    icon: 'HardDrive',
+    accentColor: 'indigo',
+  },
+  {
+    id: 'wiping-in-progress',
+    title: 'Wiping In Progress',
+    value: 184,
+    formattedValue: '184',
+    change: 'Active DoD 5220.22-M',
+    changeType: 'neutral',
+    icon: 'RefreshCw',
+    accentColor: 'blue',
+  },
+  {
+    id: 'verified',
+    title: 'Verified',
+    value: 842,
+    formattedValue: '842',
+    change: 'NIST 800-88 Compliant',
+    changeType: 'increase',
+    icon: 'ShieldCheck',
+    accentColor: 'emerald',
+  },
+  {
+    id: 'disposed',
+    title: 'Disposed',
+    value: 222,
+    formattedValue: '222',
+    change: 'Recycled / E-Waste',
+    changeType: 'neutral',
+    icon: 'Recycle',
+    accentColor: 'amber',
+  },
+];
+
+export const mockLifecycleStages: LifecycleStage[] = [
+  {
+    id: 'registered',
+    name: 'Registered',
+    count: 142,
+    status: 'REGISTERED',
+    color: '#6366F1',
+    bgColor: 'bg-indigo-50',
+    borderColor: 'border-indigo-200',
+  },
+  {
+    id: 'wiping',
+    name: 'Wiping',
+    count: 184,
+    status: 'WIPING',
+    color: '#3B82F6',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+  },
+  {
+    id: 'verification',
+    name: 'Verification',
+    count: 842,
+    status: 'VERIFIED',
+    color: '#10B981',
+    bgColor: 'bg-emerald-50',
+    borderColor: 'border-emerald-200',
+  },
+  {
+    id: 'disposal',
+    name: 'Disposal',
+    count: 222,
+    status: 'DISPOSED',
+    color: '#F59E0B',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200',
+  },
+];
+
+export const mockStatusDistribution: StatusDistributionItem[] = [
+  {
+    name: 'Verified',
+    status: 'VERIFIED',
+    value: 842,
+    percentage: 67.5,
+    color: '#10B981',
+  },
+  {
+    name: 'Disposed',
+    status: 'DISPOSED',
+    value: 222,
+    percentage: 17.8,
+    color: '#F59E0B',
+  },
+  {
+    name: 'Wiping In Progress',
+    status: 'WIPING',
+    value: 184,
+    percentage: 14.7,
+    color: '#3B82F6',
+  },
+];
+
+export const mockAssetTypes: AssetTypeBreakdown[] = [
+  {
+    type: 'Laptops',
+    category: 'LAPTOP',
+    count: 540,
+    percentage: 43,
+    color: 'bg-indigo-600',
+  },
+  {
+    type: 'Desktops',
+    category: 'DESKTOP',
+    count: 320,
+    percentage: 26,
+    color: 'bg-blue-500',
+  },
+  {
+    type: 'Servers',
+    category: 'SERVER',
+    count: 248,
+    percentage: 20,
+    color: 'bg-emerald-500',
+  },
+  {
+    type: 'Others',
+    category: 'OTHER',
+    count: 140,
+    percentage: 11,
+    color: 'bg-slate-400',
+  },
+];
+
+export const mockRecentActivities: ActivityItem[] = [
+  {
+    id: 'act-1',
+    type: 'registered',
+    title: 'Asset registered',
+    assetId: 'AST-9021',
+    assetType: 'Dell Latitude 7420',
+    timestamp: '2026-09-01T11:58:00Z',
+    relativeTime: '5m ago',
+    status: 'REGISTERED',
+  },
+  {
+    id: 'act-2',
+    type: 'wiping_started',
+    title: 'Wiping started (DoD 5220.22-M)',
+    assetId: 'AST-8840',
+    assetType: 'HP ProLiant DL380 Gen10',
+    timestamp: '2026-09-01T11:41:00Z',
+    relativeTime: '22m ago',
+    status: 'WIPING',
+  },
+  {
+    id: 'act-3',
+    type: 'verified',
+    title: 'NIST 800-88 verification passed',
+    assetId: 'AST-8712',
+    assetType: 'MacBook Pro M2 16"',
+    timestamp: '2026-09-01T10:55:00Z',
+    relativeTime: '1h ago',
+    status: 'VERIFIED',
+  },
+  {
+    id: 'act-4',
+    type: 'disposed',
+    title: 'Dispatched for R2 recycling',
+    assetId: 'AST-8490',
+    assetType: 'Lenovo ThinkCentre M70q',
+    timestamp: '2026-09-01T08:45:00Z',
+    relativeTime: '3h ago',
+    status: 'DISPOSED',
+  },
+  {
+    id: 'act-5',
+    type: 'verified',
+    title: 'Cryptographic erasure certified',
+    assetId: 'AST-8311',
+    assetType: 'Cisco Catalyst 3850',
+    timestamp: '2026-09-01T06:12:00Z',
+    relativeTime: '6h ago',
+    status: 'VERIFIED',
+  },
+];
+
+export const mockQuickActions: QuickAction[] = [
+  {
+    id: 'action-register',
+    label: 'Register Asset',
+    icon: 'PlusCircle',
+    variant: 'primary',
+  },
+  {
+    id: 'action-wipe',
+    label: 'Start Wiping',
+    icon: 'PlayCircle',
+    variant: 'secondary',
+  },
+  {
+    id: 'action-verify',
+    label: 'Verify Asset',
+    icon: 'CheckCircle2',
+    variant: 'emerald',
+  },
+  {
+    id: 'action-dispose',
+    label: 'Dispose Asset',
+    icon: 'Archive',
+    variant: 'amber',
+  },
+];

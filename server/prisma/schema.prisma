@@ -1,0 +1,147 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --------------------------------------------------
+// ENUMS
+// --------------------------------------------------
+
+enum Role {
+  ADMIN
+  IT_OFFICER
+  DISPOSAL_OFFICER
+}
+
+enum AssetStatus {
+  REGISTERED
+  WIPING_PENDING
+  WIPING_IN_PROGRESS
+  WIPING_COMPLETED
+  VERIFIED
+  DISPOSED
+}
+
+enum WipingStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum DisposalMethod {
+  RECYCLING
+  PHYSICAL_SHREDDING
+  RESALE
+  DONATION
+}
+
+// --------------------------------------------------
+// MODELS
+// --------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationships
+  wipingRecordsPerformed   WipingRecord[]   @relation("WipingTechnician")
+  wipingRecordsVerified    WipingRecord[]   @relation("WipingVerifier")
+  disposalRecordsPerformed DisposalRecord[] @relation("DisposalOfficer")
+
+  @@index([role])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Asset {
+  id           String      @id @default(uuid())
+  assetTag     String      @unique
+  serialNumber String      @unique
+  assetType    String
+  brand        String
+  model        String
+  department   String
+  purchaseDate DateTime?
+  status       AssetStatus @default(REGISTERED)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Relationships
+  wipingRecords   WipingRecord[]
+  disposalRecords DisposalRecord[]
+
+  @@index([status])
+  @@index([assetType])
+  @@index([department])
+  @@map("assets")
+}
+
+model WipingRecord {
+  id                 String             @id @default(uuid())
+  assetId            String
+  technicianId       String
+  wipingMethod       String
+  wipingTool         String
+  status             WipingStatus       @default(PENDING)
+  verificationStatus VerificationStatus @default(PENDING)
+  remarks            String?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  verifiedAt         DateTime?
+  verifiedById       String?
+  rejectionReason    String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  // Relationships
+  asset      Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  technician User  @relation("WipingTechnician", fields: [technicianId], references: [id])
+  verifiedBy User? @relation("WipingVerifier", fields: [verifiedById], references: [id])
+
+  @@index([assetId])
+  @@index([technicianId])
+  @@index([status])
+  @@index([verificationStatus])
+  @@map("wiping_records")
+}
+
+model DisposalRecord {
+  id                String         @id @default(uuid())
+  assetId           String
+  officerId         String
+  disposalMethod    DisposalMethod
+  vendorName        String?
+  certificateNumber String?        @unique
+  remarks           String?
+  disposedAt        DateTime       @default(now())
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  // Relationships
+  asset   Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  officer User  @relation("DisposalOfficer", fields: [officerId], references: [id])
+
+  @@index([assetId])
+  @@index([officerId])
+  @@index([disposalMethod])
+  @@map("disposal_records")
+}

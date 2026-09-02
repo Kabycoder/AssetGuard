@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { DashboardPage } from './pages/DashboardPage';
 import { AssetsPage } from './pages/AssetsPage';
+import { AssetDetailPage } from './pages/AssetDetailPage';
 import { SanitizationPage } from './pages/SanitizationPage';
 import { VerificationPage } from './pages/VerificationPage';
 import { DisposalPage } from './pages/DisposalPage';
@@ -33,6 +34,7 @@ export const App: React.FC = () => {
             {/* General Authenticated Routes */}
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="assets" element={<AssetsPage />} />
+            <Route path="assets/:id" element={<AssetDetailPage />} />
 
             {/* IT Officer & Admin Protected Routes */}
             <Route

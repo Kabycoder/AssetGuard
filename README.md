@@ -265,16 +265,6 @@ All protected API endpoints require an `Authorization: Bearer <JWT_TOKEN>` heade
 
 ---
 
-## 👥 Demo User Accounts
-
-| Role | Email | Password | Primary Workspace / Purpose |
-|---|---|---|---|
-| **Administrator** | `admin@assetguard.local` | `Admin@123456` | QA Verification, Asset Management, Governance |
-| **IT Officer** | `it@assetguard.local` | `Officer@123456` | NIST 800-88 Data Sanitization, Erasure Execution |
-| **Disposal Officer** | `disposal@assetguard.local` | `Disposal@123456` | R2 Partner Logistics, Certificate of Destruction (COD) |
-
----
-
 ## 📄 License & Academic Attribution
 
 This project is developed as part of academic / professional IT Asset Disposition and Data Security research. Distributed under the MIT License.

@@ -16,7 +16,16 @@ export const createApp = (): Application => {
   // CORS Configuration
   app.use(
     cors({
-      origin: config.isProduction ? config.clientUrl : true,
+      origin: (origin, callback) => {
+        if (!config.isProduction || !origin) {
+          return callback(null, true);
+        }
+        const allowedOrigins = config.clientUrl.split(',').map((u) => u.trim());
+        if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+          return callback(null, true);
+        }
+        return callback(null, true);
+      },
       credentials: true,
     })
   );

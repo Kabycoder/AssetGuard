@@ -193,6 +193,7 @@ export class AssetController {
       if (error.message === 'ASSET_HAS_WORKFLOW_HISTORY') {
         res.status(409).json({
           success: false,
+          error: 'ASSET_HAS_WORKFLOW_HISTORY',
           message:
             'Cannot delete asset: Active or completed data wiping/disposal audit records exist for this hardware. Permanent record retention is enforced.',
         });

@@ -1,290 +1,25 @@
 import { AssetStatus, Prisma } from '@prisma/client';
-import { prisma } from '../config';
+import { prisma, invalidateDashboardCache } from '../config';
 import {
   CreateAssetDto,
   UpdateAssetDto,
   AssetQueryParams,
   PaginatedAssetResponse,
 } from '../types/asset.types';
-
-let isDatabaseOnline: boolean | null = null;
-let lastDbCheck = 0;
-
-// Fallback in-memory dataset when PostgreSQL is offline
-let fallbackAssets: any[] = [
-  {
-    id: 'f1111111-0001-4000-8000-000000000001',
-    assetTag: 'AST-2024-001',
-    serialNumber: 'SN-DELL-LAT7420-001',
-    assetType: 'Laptop',
-    brand: 'Dell',
-    model: 'Latitude 7420 vPro',
-    department: 'Engineering',
-    purchaseDate: new Date('2021-03-15'),
-    status: AssetStatus.REGISTERED,
-    createdAt: new Date('2026-08-01T10:00:00Z'),
-    updatedAt: new Date('2026-08-01T10:00:00Z'),
-    wipingRecords: [],
-    disposalRecords: [],
-  },
-  {
-    id: 'f1111111-0002-4000-8000-000000000002',
-    assetTag: 'AST-2024-002',
-    serialNumber: 'SN-APPL-MBP16-002',
-    assetType: 'Laptop',
-    brand: 'Apple',
-    model: 'MacBook Pro 16" M1 Max',
-    department: 'Product Design',
-    purchaseDate: new Date('2021-11-10'),
-    status: AssetStatus.REGISTERED,
-    createdAt: new Date('2026-08-02T10:00:00Z'),
-    updatedAt: new Date('2026-08-02T10:00:00Z'),
-    wipingRecords: [],
-    disposalRecords: [],
-  },
-  {
-    id: 'f1111111-0003-4000-8000-000000000003',
-    assetTag: 'AST-2024-003',
-    serialNumber: 'SN-LEN-T14-003',
-    assetType: 'Laptop',
-    brand: 'Lenovo',
-    model: 'ThinkPad T14 Gen 2',
-    department: 'Human Resources',
-    purchaseDate: new Date('2020-08-20'),
-    status: AssetStatus.WIPING_PENDING,
-    createdAt: new Date('2026-08-03T10:00:00Z'),
-    updatedAt: new Date('2026-08-03T10:00:00Z'),
-    wipingRecords: [
-      {
-        id: 'w-003',
-        wipingMethod: 'NIST SP 800-88 Rev 1 (Purge)',
-        wipingTool: 'Blancco Drive Eraser v7.8',
-        status: 'PENDING',
-        verificationStatus: 'PENDING',
-        remarks: 'Scheduled for cryptographic erase.',
-        createdAt: new Date('2026-08-25T09:00:00Z'),
-      },
-    ],
-    disposalRecords: [],
-  },
-  {
-    id: 'f1111111-0004-4000-8000-000000000004',
-    assetTag: 'AST-2024-004',
-    serialNumber: 'SN-HP-EB840-004',
-    assetType: 'Laptop',
-    brand: 'HP',
-    model: 'EliteBook 840 G8',
-    department: 'Finance',
-    purchaseDate: new Date('2021-01-18'),
-    status: AssetStatus.WIPING_PENDING,
-    createdAt: new Date('2026-08-04T10:00:00Z'),
-    updatedAt: new Date('2026-08-04T10:00:00Z'),
-    wipingRecords: [],
-    disposalRecords: [],
-  },
-  {
-    id: 'f1111111-0005-4000-8000-000000000005',
-    assetTag: 'AST-2024-005',
-    serialNumber: 'SN-DELL-PWS7820-005',
-    assetType: 'Workstation',
-    brand: 'Dell',
-    model: 'Precision 7820 Tower Workstation',
-    department: 'Data Science',
-    purchaseDate: new Date('2019-06-12'),
-    status: AssetStatus.WIPING_IN_PROGRESS,
-    createdAt: new Date('2026-08-05T10:00:00Z'),
-    updatedAt: new Date('2026-08-05T10:00:00Z'),
-    wipingRecords: [
-      {
-        id: 'w-005',
-        wipingMethod: 'DoD 5220.22-M 3-Pass',
-        wipingTool: 'nwipe v0.34',
-        status: 'IN_PROGRESS',
-        verificationStatus: 'PENDING',
-        remarks: 'Pass 2 of 3 in progress.',
-        startedAt: new Date('2026-08-26T08:00:00Z'),
-        createdAt: new Date('2026-08-26T08:00:00Z'),
-      },
-    ],
-    disposalRecords: [],
-  },
-  {
-    id: 'f1111111-0006-4000-8000-000000000006',
-    assetTag: 'AST-2024-006',
-    serialNumber: 'SN-HP-Z4G4-006',
-    assetType: 'Workstation',
-    brand: 'HP',
-    model: 'Z4 G4 Workstation Xeon',
-    department: 'Engineering',
-    purchaseDate: new Date('2019-09-05'),
-    status: AssetStatus.WIPING_IN_PROGRESS,
-    createdAt: new Date('2026-08-06T10:00:00Z'),
-    updatedAt: new Date('2026-08-06T10:00:00Z'),
-    wipingRecords: [],
-    disposalRecords: [],
-  },
-  {
-    id: 'f1111111-0007-4000-8000-000000000007',
-    assetTag: 'AST-2024-007',
-    serialNumber: 'SN-DELL-R740-007',
-    assetType: 'Rack Server',
-    brand: 'Dell',
-    model: 'PowerEdge R740 2U Server',
-    department: 'Infrastructure & Ops',
-    purchaseDate: new Date('2018-05-22'),
-    status: AssetStatus.WIPING_COMPLETED,
-    createdAt: new Date('2026-08-07T10:00:00Z'),
-    updatedAt: new Date('2026-08-07T10:00:00Z'),
-    wipingRecords: [
-      {
-        id: 'w-007',
-        wipingMethod: 'NIST SP 800-88 Rev 1 (Purge)',
-        wipingTool: 'Blancco Enterprise v8.2',
-        status: 'COMPLETED',
-        verificationStatus: 'PENDING',
-        remarks: 'All 8 SAS drives sanitized.',
-        completedAt: new Date('2026-08-28T14:30:00Z'),
-        createdAt: new Date('2026-08-28T09:00:00Z'),
-      },
-    ],
-    disposalRecords: [],
-  },
-  {
-    id: 'f1111111-0008-4000-8000-000000000008',
-    assetTag: 'AST-2024-008',
-    serialNumber: 'SN-HPE-DL380-008',
-    assetType: 'Rack Server',
-    brand: 'HPE',
-    model: 'ProLiant DL380 Gen10',
-    department: 'Infrastructure & Ops',
-    purchaseDate: new Date('2018-10-14'),
-    status: AssetStatus.WIPING_COMPLETED,
-    createdAt: new Date('2026-08-08T10:00:00Z'),
-    updatedAt: new Date('2026-08-08T10:00:00Z'),
-    wipingRecords: [],
-    disposalRecords: [],
-  },
-  {
-    id: 'f1111111-0009-4000-8000-000000000009',
-    assetTag: 'AST-2024-009',
-    serialNumber: 'SN-CISCO-C9300-009',
-    assetType: 'Enterprise Switch',
-    brand: 'Cisco',
-    model: 'Catalyst 9300 48-Port PoE+',
-    department: 'Network Operations',
-    purchaseDate: new Date('2019-02-11'),
-    status: AssetStatus.VERIFIED,
-    createdAt: new Date('2026-08-09T10:00:00Z'),
-    updatedAt: new Date('2026-08-09T10:00:00Z'),
-    wipingRecords: [
-      {
-        id: 'w-009',
-        wipingMethod: 'NVRAM Flash Sanitization',
-        wipingTool: 'Cisco IOS Secure Erase',
-        status: 'COMPLETED',
-        verificationStatus: 'VERIFIED',
-        remarks: 'All crypto keys erased. Verified by Admin.',
-        completedAt: new Date('2026-08-25T11:15:00Z'),
-        verifiedAt: new Date('2026-08-25T14:00:00Z'),
-        createdAt: new Date('2026-08-25T10:00:00Z'),
-      },
-    ],
-    disposalRecords: [],
-  },
-  {
-    id: 'f1111111-0010-4000-8000-000000000010',
-    assetTag: 'AST-2024-010',
-    serialNumber: 'SN-PAN-PA3220-010',
-    assetType: 'Firewall Appliance',
-    brand: 'Palo Alto Networks',
-    model: 'PA-3220 Next-Gen Firewall',
-    department: 'Information Security',
-    purchaseDate: new Date('2019-07-29'),
-    status: AssetStatus.VERIFIED,
-    createdAt: new Date('2026-08-10T10:00:00Z'),
-    updatedAt: new Date('2026-08-10T10:00:00Z'),
-    wipingRecords: [],
-    disposalRecords: [],
-  },
-  {
-    id: 'f1111111-0011-4000-8000-000000000011',
-    assetTag: 'AST-2024-011',
-    serialNumber: 'SN-DELL-EMC-ME4024-011',
-    assetType: 'SAN Storage Array',
-    brand: 'Dell EMC',
-    model: 'PowerVault ME4024 Storage',
-    department: 'Enterprise Storage',
-    purchaseDate: new Date('2017-12-04'),
-    status: AssetStatus.DISPOSED,
-    createdAt: new Date('2026-08-11T10:00:00Z'),
-    updatedAt: new Date('2026-08-01T10:00:00Z'),
-    wipingRecords: [
-      {
-        id: 'w-011',
-        wipingMethod: 'NIST SP 800-88 Purge',
-        wipingTool: 'Dell Storage Center CLI Wipe',
-        status: 'COMPLETED',
-        verificationStatus: 'VERIFIED',
-        remarks: 'All 24 bays sanitized.',
-        completedAt: new Date('2026-08-20T18:00:00Z'),
-        createdAt: new Date('2026-08-20T08:00:00Z'),
-      },
-    ],
-    disposalRecords: [
-      {
-        id: 'd-011',
-        disposalMethod: 'RECYCLING',
-        vendorName: 'EcoTech Global Recycling Solutions',
-        certificateNumber: 'CERT-REC-2026-8801',
-        remarks: 'R2v3 certified recycling batch #4401.',
-        disposedAt: new Date('2026-08-23T11:00:00Z'),
-        createdAt: new Date('2026-08-23T11:00:00Z'),
-      },
-    ],
-  },
-  {
-    id: 'f1111111-0012-4000-8000-000000000012',
-    assetTag: 'AST-2024-012',
-    serialNumber: 'SN-LEN-SR650-012',
-    assetType: 'Rack Server',
-    brand: 'Lenovo',
-    model: 'ThinkSystem SR650 2U',
-    department: 'Infrastructure & Ops',
-    purchaseDate: new Date('2018-04-16'),
-    status: AssetStatus.DISPOSED,
-    createdAt: new Date('2026-08-12T10:00:00Z'),
-    updatedAt: new Date('2026-08-12T10:00:00Z'),
-    wipingRecords: [],
-    disposalRecords: [
-      {
-        id: 'd-012',
-        disposalMethod: 'PHYSICAL_SHREDDING',
-        vendorName: 'SecureShred Industrial Destruction Services',
-        certificateNumber: 'CERT-SHRED-2026-9402',
-        remarks: 'Cross-cut shredded to DIN 66399 Level H-5.',
-        disposedAt: new Date('2026-08-24T14:30:00Z'),
-        createdAt: new Date('2026-08-24T14:30:00Z'),
-      },
-    ],
-  },
-];
+import {
+  fallbackAssets,
+  shouldTryDb,
+  handleDbSuccess,
+  handleDbFailure,
+  getPopulatedAsset,
+  hasAssetWorkflowHistory,
+  saveFallbackStore,
+  fallbackWipingRecords,
+  fallbackDisposalRecords,
+} from '../data/fallbackStore';
+import { generateObjectId } from '../utils/objectId';
 
 export class AssetService {
-  private shouldTryDb(): boolean {
-    if (isDatabaseOnline === false) {
-      // Re-try after 30 seconds
-      if (Date.now() - lastDbCheck < 30000) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  private handleDbFailure(_err: any): void {
-    isDatabaseOnline = false;
-    lastDbCheck = Date.now();
-  }
-
   /**
    * Retrieves paginated, filtered, and searchable list of assets.
    */
@@ -295,7 +30,7 @@ export class AssetService {
 
     const { search, status, assetType, department } = query;
 
-    if (this.shouldTryDb()) {
+    if (shouldTryDb()) {
       try {
         const where: Prisma.AssetWhereInput = {};
 
@@ -356,7 +91,7 @@ export class AssetService {
           prisma.asset.count({ where }),
         ]);
 
-        isDatabaseOnline = true;
+        handleDbSuccess();
         return {
           assets,
           pagination: {
@@ -367,11 +102,11 @@ export class AssetService {
           },
         };
       } catch (dbError) {
-        this.handleDbFailure(dbError);
+        handleDbFailure(dbError, 'AssetService');
       }
     }
 
-    // Development Fallback if PostgreSQL is offline
+    // Persistent Fallback if MongoDB is offline
     let filtered = [...fallbackAssets];
 
     if (status) {
@@ -404,7 +139,30 @@ export class AssetService {
     }
 
     const total = filtered.length;
-    const paginated = filtered.slice(skip, skip + limit);
+    const paginated = filtered.slice(skip, skip + limit).map((asset) => {
+      const wipingRecords = fallbackWipingRecords
+        .filter((w) => w.assetId === asset.id)
+        .map((w) => ({
+          id: w.id,
+          status: w.status,
+          verificationStatus: w.verificationStatus,
+          wipingMethod: w.wipingMethod,
+        }));
+
+      const disposalRecords = fallbackDisposalRecords
+        .filter((d) => d.assetId === asset.id)
+        .map((d) => ({
+          id: d.id,
+          disposalMethod: d.disposalMethod,
+          certificateNumber: d.certificateNumber,
+        }));
+
+      return {
+        ...asset,
+        wipingRecords,
+        disposalRecords,
+      };
+    });
 
     return {
       assets: paginated,
@@ -421,7 +179,7 @@ export class AssetService {
    * Retrieves single asset by ID including workflow history records.
    */
   async getAssetById(id: string): Promise<any | null> {
-    if (this.shouldTryDb()) {
+    if (shouldTryDb()) {
       try {
         const asset = await prisma.asset.findUnique({
           where: { id },
@@ -449,16 +207,15 @@ export class AssetService {
         });
 
         if (asset) {
-          isDatabaseOnline = true;
+          handleDbSuccess();
           return asset;
         }
       } catch (dbError) {
-        this.handleDbFailure(dbError);
+        handleDbFailure(dbError, 'AssetService');
       }
     }
 
-    const fallback = fallbackAssets.find((a) => a.id === id);
-    return fallback || null;
+    return getPopulatedAsset(id);
   }
 
   /**
@@ -473,7 +230,7 @@ export class AssetService {
     const department = (data.department || '').trim();
     const purchaseDate = data.purchaseDate ? new Date(data.purchaseDate) : null;
 
-    if (this.shouldTryDb()) {
+    if (shouldTryDb()) {
       try {
         const existingTag = await prisma.asset.findUnique({ where: { assetTag } });
         if (existingTag) throw new Error('DUPLICATE_ASSET_TAG');
@@ -494,7 +251,8 @@ export class AssetService {
           },
         });
 
-        isDatabaseOnline = true;
+        handleDbSuccess();
+        invalidateDashboardCache().catch(() => {});
         return created;
       } catch (dbError: any) {
         if (
@@ -503,11 +261,11 @@ export class AssetService {
         ) {
           throw dbError;
         }
-        this.handleDbFailure(dbError);
+        handleDbFailure(dbError, 'AssetService');
       }
     }
 
-    // Fallback
+    // Persistent Fallback
     const tagExists = fallbackAssets.some((a) => a.assetTag.toUpperCase() === assetTag);
     if (tagExists) throw new Error('DUPLICATE_ASSET_TAG');
 
@@ -517,7 +275,7 @@ export class AssetService {
     if (serialExists) throw new Error('DUPLICATE_SERIAL_NUMBER');
 
     const newAsset = {
-      id: `ast-${Date.now()}`,
+      id: generateObjectId(),
       assetTag,
       serialNumber,
       assetType,
@@ -533,6 +291,8 @@ export class AssetService {
     };
 
     fallbackAssets.unshift(newAsset);
+    saveFallbackStore();
+    invalidateDashboardCache().catch(() => {});
     return newAsset;
   }
 
@@ -540,7 +300,7 @@ export class AssetService {
    * Updates an existing Asset record.
    */
   async updateAsset(id: string, data: UpdateAssetDto): Promise<any> {
-    if (this.shouldTryDb()) {
+    if (shouldTryDb()) {
       try {
         const existing = await prisma.asset.findUnique({ where: { id } });
         if (!existing) throw new Error('ASSET_NOT_FOUND');
@@ -588,7 +348,8 @@ export class AssetService {
           data: updateData,
         });
 
-        isDatabaseOnline = true;
+        handleDbSuccess();
+        invalidateDashboardCache().catch(() => {});
         return updated;
       } catch (dbError: any) {
         if (
@@ -598,11 +359,11 @@ export class AssetService {
         ) {
           throw dbError;
         }
-        this.handleDbFailure(dbError);
+        handleDbFailure(dbError, 'AssetService');
       }
     }
 
-    // Fallback
+    // Persistent Fallback
     const index = fallbackAssets.findIndex((a) => a.id === id);
     if (index === -1) throw new Error('ASSET_NOT_FOUND');
 
@@ -637,15 +398,16 @@ export class AssetService {
       existing.purchaseDate = data.purchaseDate ? new Date(data.purchaseDate) : null;
     }
     existing.updatedAt = new Date();
-
+    saveFallbackStore();
+    invalidateDashboardCache().catch(() => {});
     return existing;
   }
 
   /**
-   * Deletes an asset.
+   * Deletes an asset. Enforces permanent history protection.
    */
   async deleteAsset(id: string): Promise<boolean> {
-    if (this.shouldTryDb()) {
+    if (shouldTryDb()) {
       try {
         const asset = await prisma.asset.findUnique({
           where: { id },
@@ -674,7 +436,8 @@ export class AssetService {
           where: { id },
         });
 
-        isDatabaseOnline = true;
+        handleDbSuccess();
+        invalidateDashboardCache().catch(() => {});
         return true;
       } catch (dbError: any) {
         if (
@@ -683,24 +446,21 @@ export class AssetService {
         ) {
           throw dbError;
         }
-        this.handleDbFailure(dbError);
+        handleDbFailure(dbError, 'AssetService');
       }
     }
 
-    // Fallback
+    // Persistent Fallback
     const index = fallbackAssets.findIndex((a) => a.id === id);
     if (index === -1) throw new Error('ASSET_NOT_FOUND');
 
-    const item = fallbackAssets[index];
-    const hasHistory =
-      (item.wipingRecords && item.wipingRecords.length > 0) ||
-      (item.disposalRecords && item.disposalRecords.length > 0);
-
-    if (hasHistory) {
+    if (hasAssetWorkflowHistory(id)) {
       throw new Error('ASSET_HAS_WORKFLOW_HISTORY');
     }
 
     fallbackAssets.splice(index, 1);
+    saveFallbackStore();
+    invalidateDashboardCache().catch(() => {});
     return true;
   }
 }

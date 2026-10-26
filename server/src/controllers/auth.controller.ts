@@ -103,6 +103,45 @@ export class AuthController {
       message: 'Logged out successfully.',
     });
   }
+
+  /**
+   * PUT /api/v1/auth/profile
+   * Update name for currently authenticated user.
+   */
+  async updateProfile(
+    req: Request,
+    res: Response<ApiResponse<{ user: AuthUser }>>,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!req.user?.userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Authentication required.',
+        });
+        return;
+      }
+
+      const { name } = req.body;
+      if (!name || typeof name !== 'string' || !name.trim()) {
+        res.status(400).json({
+          success: false,
+          message: 'Name is required.',
+        });
+        return;
+      }
+
+      const updatedUser = await authService.updateProfile(req.user.userId, name.trim());
+
+      res.status(200).json({
+        success: true,
+        message: 'Profile updated successfully.',
+        data: { user: updatedUser },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const authController = new AuthController();

@@ -82,3 +82,31 @@ export const authorizeRoles = (...allowedRoles: Role[]) => {
     });
   };
 };
+
+/**
+ * Strict Role-Based Access Control middleware.
+ * Verifies that the authenticated user possesses one of the exact allowed roles
+ * without automatic escalation for ADMIN.
+ */
+export const authorizeStrictRoles = (...allowedRoles: Role[]) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: 'Authentication required before verifying role permissions.',
+      });
+      return;
+    }
+
+    if (allowedRoles.includes(req.user.role)) {
+      next();
+      return;
+    }
+
+    res.status(403).json({
+      success: false,
+      message: `Forbidden: User role '${req.user.role}' is not authorized to perform this operation. Only [${allowedRoles.join(', ')}] can perform this action.`,
+    });
+  };
+};
+

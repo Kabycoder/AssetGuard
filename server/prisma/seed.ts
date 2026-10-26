@@ -23,17 +23,48 @@ async function main() {
   await prisma.asset.deleteMany();
   await prisma.user.deleteMany();
 
-  // 2. Hash default seed password
+  // 2. Hash passwords
   const saltRounds = 10;
-  const passwordHash = await bcrypt.hash(DEFAULT_SEED_PASSWORD, saltRounds);
+  const adminPasswordHash = await bcrypt.hash('Admin@Kabi2026!', saltRounds);
+  const itPasswordHash = await bcrypt.hash('IT@Jeya2026!', saltRounds);
+  const disposalPasswordHash = await bcrypt.hash('Disposal@Broo2026!', saltRounds);
+  const defaultPasswordHash = await bcrypt.hash(DEFAULT_SEED_PASSWORD, saltRounds);
 
-  // 3. Create Demo Users
-  console.log('👤 Creating demo users...');
+  // 3. Create Dedicated Authorized Users
+  console.log('👤 Creating enterprise users...');
+  const primaryAdmin = await prisma.user.create({
+    data: {
+      name: 'Kabilashini (Admin)',
+      email: 'ms.kabi78@gmail.com',
+      passwordHash: adminPasswordHash,
+      role: Role.ADMIN,
+    },
+  });
+
+  const primaryItOfficer = await prisma.user.create({
+    data: {
+      name: 'Jeyarajalingam (IT Officer)',
+      email: 'jeyarajalingam0@gmail.com',
+      passwordHash: itPasswordHash,
+      role: Role.IT_OFFICER,
+    },
+  });
+
+  const primaryDisposalOfficer = await prisma.user.create({
+    data: {
+      name: 'Disposal Officer',
+      email: 'itzmebroo1@gmail.com',
+      passwordHash: disposalPasswordHash,
+      role: Role.DISPOSAL_OFFICER,
+    },
+  });
+
+  // Automated Test Suite Users (for tests and verification scripts)
   const adminUser = await prisma.user.create({
     data: {
       name: 'Sarah Jenkins',
       email: 'admin@assetguard.local',
-      passwordHash,
+      passwordHash: defaultPasswordHash,
       role: Role.ADMIN,
     },
   });
@@ -42,7 +73,7 @@ async function main() {
     data: {
       name: 'Alex Rivera',
       email: 'it@assetguard.local',
-      passwordHash,
+      passwordHash: defaultPasswordHash,
       role: Role.IT_OFFICER,
     },
   });
@@ -51,16 +82,15 @@ async function main() {
     data: {
       name: 'Marcus Chen',
       email: 'disposal@assetguard.local',
-      passwordHash,
+      passwordHash: defaultPasswordHash,
       role: Role.DISPOSAL_OFFICER,
     },
   });
 
-  console.log(`✅ Created 3 demo users:`);
-  console.log(`   - Admin:            ${adminUser.email} (Role: ADMIN)`);
-  console.log(`   - IT Officer:       ${itOfficerUser.email} (Role: IT_OFFICER)`);
-  console.log(`   - Disposal Officer: ${disposalOfficerUser.email} (Role: DISPOSAL_OFFICER)`);
-  console.log(`   - Default Password: ${DEFAULT_SEED_PASSWORD}`);
+  console.log(`✅ Created authorized users:`);
+  console.log(`   - Admin:            ${primaryAdmin.email} (Password: Admin@Kabi2026!)`);
+  console.log(`   - IT Officer:       ${primaryItOfficer.email} (Password: IT@Jeya2026!)`);
+  console.log(`   - Disposal Officer: ${primaryDisposalOfficer.email} (Password: Disposal@Broo2026!)`);
 
   // 4. Create 12 Realistic IT Assets across lifecycle stages
   console.log('💻 Creating realistic IT assets...');

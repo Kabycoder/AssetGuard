@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
@@ -54,7 +54,7 @@ enum DisposalMethod {
 // --------------------------------------------------
 
 model User {
-  id           String   @id @default(uuid())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   email        String   @unique
   passwordHash String
@@ -73,7 +73,7 @@ model User {
 }
 
 model Asset {
-  id           String      @id @default(uuid())
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
   assetTag     String      @unique
   serialNumber String      @unique
   assetType    String
@@ -96,9 +96,9 @@ model Asset {
 }
 
 model WipingRecord {
-  id                 String             @id @default(uuid())
-  assetId            String
-  technicianId       String
+  id                 String             @id @default(auto()) @map("_id") @db.ObjectId
+  assetId            String             @db.ObjectId
+  technicianId       String             @db.ObjectId
   wipingMethod       String
   wipingTool         String
   status             WipingStatus       @default(PENDING)
@@ -107,7 +107,7 @@ model WipingRecord {
   startedAt          DateTime?
   completedAt        DateTime?
   verifiedAt         DateTime?
-  verifiedById       String?
+  verifiedById       String?            @db.ObjectId
   rejectionReason    String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -125,9 +125,9 @@ model WipingRecord {
 }
 
 model DisposalRecord {
-  id                String         @id @default(uuid())
-  assetId           String
-  officerId         String
+  id                String         @id @default(auto()) @map("_id") @db.ObjectId
+  assetId           String         @db.ObjectId
+  officerId         String         @db.ObjectId
   disposalMethod    DisposalMethod
   vendorName        String?
   certificateNumber String?        @unique

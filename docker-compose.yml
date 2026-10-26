@@ -1,0 +1,97 @@
+services:
+  # ==========================================
+  # MongoDB Database Service
+  # ==========================================
+  mongodb:
+    image: mongo:7
+    container_name: assetguard-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-assetguard}
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - assetguard-network
+
+  # ==========================================
+  # Redis Cache & Rate Limit Service
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: assetguard-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - assetguard-network
+
+  # ==========================================
+  # AssetGuard Backend API Service (Express + Prisma)
+  # ==========================================
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: assetguard-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: mongodb://mongodb:27017/assetguard?directConnection=true
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-assetguard_secure_production_jwt_secret_key_2026_98x}
+      JWT_EXPIRES_IN: 8h
+      CORS_ORIGIN: http://localhost:80,http://localhost:5173,http://localhost:3000,http://localhost
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - assetguard-network
+
+  # ==========================================
+  # AssetGuard Frontend Service (React + Vite + NGINX)
+  # ==========================================
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:5000/api/v1
+    container_name: assetguard-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - assetguard-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  assetguard-network:
+    driver: bridge

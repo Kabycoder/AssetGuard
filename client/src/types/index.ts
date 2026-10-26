@@ -169,8 +169,160 @@ export interface AuthResponseData {
   user: User;
 }
 
+export type WipingStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+export type VerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+
+export interface SanitizationQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  wipingStatus?: string;
+  assetType?: string;
+  department?: string;
+}
+
+export interface StartWipingPayload {
+  wipingMethod?: string;
+  wipingTool?: string;
+  remarks?: string;
+}
+
+export interface CompleteWipingPayload {
+  wipingMethod: string;
+  wipingTool: string;
+  remarks?: string;
+}
+
+export interface FailWipingPayload {
+  reason?: string;
+  remarks?: string;
+}
+
+export interface SanitizationQueueData {
+  assets: (Asset & { activeWipingRecord?: WipingRecordSummary | null })[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface SanitizationDetailData {
+  asset: Asset;
+  wipingRecords: WipingRecordSummary[];
+}
+
+export interface VerificationQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  verificationStatus?: string;
+  assetType?: string;
+  department?: string;
+}
+
+export interface VerifyAssetPayload {
+  remarks?: string;
+  checksumAuditPassed?: boolean;
+}
+
+export interface RejectVerificationPayload {
+  rejectionReason: string;
+  remarks?: string;
+}
+
+export interface VerificationQueueData {
+  assets: (Asset & { activeWipingRecord?: WipingRecordSummary | null })[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface VerificationDetailData {
+  asset: Asset;
+  wipingRecords: WipingRecordSummary[];
+}
+
+export interface DashboardSummary {
+  totalAssets: number;
+  wipingInProgress: number;
+  verified: number;
+  disposed: number;
+}
+
+export interface DashboardLifecycle {
+  registered: number;
+  wipingPending: number;
+  wipingInProgress: number;
+  wipingCompleted: number;
+  verified: number;
+  disposed: number;
+}
+
+export interface DashboardAssetType {
+  type: string;
+  count: number;
+  percentage?: number;
+  color?: string;
+}
+
+export interface DashboardRecentActivity {
+  id: string;
+  assetTag: string;
+  action: string;
+  status: string;
+  timestamp: string;
+  assetType?: string;
+  userName?: string;
+  details?: string;
+}
+
+export interface DashboardData {
+  summary: DashboardSummary;
+  lifecycle: DashboardLifecycle;
+  assetTypes: DashboardAssetType[];
+  recentActivity: DashboardRecentActivity[];
+}
+
+export type DisposalMethod =
+  | 'RECYCLING'
+  | 'PHYSICAL_SHREDDING'
+  | 'RESALE'
+  | 'DONATION';
+
+export interface CreateDisposalPayload {
+  disposalMethod: DisposalMethod;
+  vendorName?: string;
+  certificateNumber?: string;
+  remarks?: string;
+}
+
+export interface DisposalQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  disposalMethod?: string;
+  vendorName?: string;
+}
+
+export interface DisposalQueueData {
+  records: (DisposalRecordSummary & {
+    asset: Asset;
+  })[];
+  verifiedQueue: Asset[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
   data?: T;
 }
+
+
+

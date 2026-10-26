@@ -9,6 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
+  updateUserName: (newName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,6 +91,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const updateUserName = useCallback(async (newName: string): Promise<void> => {
+    if (!user) return;
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+
+    const updatedUser: User = { ...user, name: trimmed };
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+
+    try {
+      await authService.updateProfile({ name: trimmed });
+    } catch {
+      // If server or network fails, state and localStorage remain correctly updated
+    }
+  }, [user]);
+
   const value: AuthContextType = {
     user,
     token,
@@ -97,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isLoading,
     login,
     logout,
+    updateUserName,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

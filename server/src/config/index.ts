@@ -10,7 +10,18 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL || '',
   jwtSecret: process.env.JWT_SECRET || 'assetguard-super-secure-jwt-dev-secret-key-2026',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
+  redisDashboardTtl: parseInt(process.env.REDIS_DASHBOARD_TTL || '60', 10),
   apiVersion: 'v1',
 } as const;
 
 export { prisma } from './prisma';
+export {
+  redis,
+  getCache,
+  setCache,
+  deleteCache,
+  invalidateDashboardCache,
+  isRedisConnected,
+} from './redis';
+

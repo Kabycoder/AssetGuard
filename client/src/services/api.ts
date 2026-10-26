@@ -56,6 +56,11 @@ export const authService = {
       return { success: true, message: 'Logged out' };
     }
   },
+
+  updateProfile: async (data: { name: string }): Promise<ApiResponse<{ user: User }>> => {
+    const response = await apiClient.put<ApiResponse<{ user: User }>>('/auth/profile', data);
+    return response.data;
+  },
 };
 
 export const apiService = {

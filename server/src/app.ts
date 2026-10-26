@@ -5,6 +5,7 @@ import { config } from './config';
 import { apiRouter } from './routes/api.router';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFoundHandler';
+import { apiLimiter } from './middleware/rateLimiter';
 
 export const createApp = (): Application => {
   const app: Application = express();
@@ -24,8 +25,12 @@ export const createApp = (): Application => {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+  // API Rate Limiting
+  app.use('/api/v1', apiLimiter);
+
   // API Routes
   app.use('/api/v1', apiRouter);
+
 
   // 404 Handler
   app.use(notFoundHandler);

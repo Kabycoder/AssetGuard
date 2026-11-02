@@ -20,6 +20,8 @@
     "db:seed:direct": "tsx src/scripts/seed-mongo-direct.ts",
     "db:seed:extra": "tsx src/scripts/seed-extra-data.ts",
     "db:init-rs": "tsx src/scripts/init-replica.ts",
+    "db:migrate:atlas": "tsx src/scripts/migrate-local-to-atlas.ts",
+    "db:verify:atlas": "tsx src/scripts/verify-atlas-connection.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {

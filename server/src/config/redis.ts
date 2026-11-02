@@ -4,7 +4,10 @@ import { logger } from '../utils/logger';
 let isConnected = false;
 let redisClientInstance: Redis | null = null;
 
-const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+const configuredRedisUrl = process.env.REDIS_URL?.trim();
+const isProduction = process.env.NODE_ENV === 'production';
+const shouldAttemptRedis = Boolean(configuredRedisUrl || !isProduction);
+const redisUrl = configuredRedisUrl || 'redis://localhost:6379';
 export const DEFAULT_DASHBOARD_TTL = parseInt(process.env.REDIS_DASHBOARD_TTL || '60', 10);
 
 // In-memory fallback cache store for development / offline resilience
@@ -20,9 +23,9 @@ const redisOptions: RedisOptions = {
   lazyConnect: true,
   maxRetriesPerRequest: 1,
   enableOfflineQueue: false,
-  connectTimeout: 2000,
+  connectTimeout: 5000,
+  tls: redisUrl.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
   retryStrategy(times) {
-    // In local development without Redis, stop retrying after 3 attempts to avoid console spam
     if (times > 3) {
       return null;
     }
@@ -32,13 +35,21 @@ const redisOptions: RedisOptions = {
 
 export const getRedisClient = (): Redis => {
   if (!redisClientInstance) {
+    if (!shouldAttemptRedis) {
+      logger.info(
+        '[Redis] No REDIS_URL configured in production. Operating with in-memory cache and rate limiter.'
+      );
+      redisClientInstance = new Redis(redisUrl, { lazyConnect: true, enableOfflineQueue: false });
+      return redisClientInstance;
+    }
+
     try {
       redisClientInstance = new Redis(redisUrl, redisOptions);
 
       redisClientInstance.on('connect', () => {
         isConnected = true;
         hasLoggedOfflineWarning = false;
-        logger.info(`[Redis] Connected successfully to ${redisUrl}`);
+        logger.info(`[Redis] Connected successfully to ${redisUrl.replace(/:[^:@]*@/, ':****@')}`);
       });
 
       redisClientInstance.on('ready', () => {
